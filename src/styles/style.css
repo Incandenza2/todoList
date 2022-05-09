@@ -1,0 +1,63 @@
+body {
+    display:flex;
+    justify-content: center;
+    background-color: rgb(51, 51, 97);
+}
+
+#content {
+    display:flex;
+
+}
+
+main {
+    display:flex;
+    height: auto;
+    width: auto;
+
+}
+
+.projectsBox {
+    display:flex;
+    border-style: solid;
+}
+
+.project {
+    background-color: rgb(187, 167, 133);
+    margin: 10px;
+    display:flex;
+    flex-direction: column;
+    height:600px;
+    width: 400px;
+    border-style: solid;
+}
+
+.projectTitle {
+    margin: 8px;
+    height:auto;
+    width:auto;
+    font-size: 18px;
+}
+
+.taskList {
+    margin: 8px 24px;
+    display:flex;
+    flex-direction:column;
+    height:auto;
+    width:auto;
+    
+}
+
+.task {
+    font-size: 24px;
+    color: rgb(202, 74, 0);
+    transition: scale 0.2s;
+}
+
+.task:hover {
+    scale: 1.03;
+}
+
+.completed {
+    color:green;
+    text-decoration: line-through;
+}
