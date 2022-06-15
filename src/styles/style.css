@@ -1,45 +1,90 @@
 body {
     display:flex;
     justify-content: center;
-    background-color: rgb(51, 51, 97);
+    background: radial-gradient(#7a6b52,#290101);
+    transition: all 1s;
+}
+
+body.one {
+    background: radial-gradient(#7a6b52,#290c01);
+}
+
+body.three {
+    background: radial-gradient(#7a6b52,#291801);
+}
+
+body.five {
+    background: radial-gradient(#7a6b52,#292801);
+}
+
+body.seven {
+    background: radial-gradient(#7a6b52,#202901);
+}
+
+body.nine {
+    background: radial-gradient(#7a6b52,#042901);
 }
 
 #content {
+    width: 100%;
     display:flex;
+    justify-content: center;
 
 }
 
 main {
-    display:flex;
-    height: auto;
-    width: auto;
+    display: flex;
+    justify-content: center;
 
+}
+
+.rightMain {
+    display:flex;
+    justify-content: center;
+    align-items: center;
+    width: 400px;
+}
+
+.leftMain {
+    display:flex;
+    width:400px;
 }
 
 .projectsBox {
     display:flex;
-    border-style: solid;
+    padding: 10px;
 }
 
 .project {
     background-color: rgb(187, 167, 133);
-    margin: 10px;
+    padding: 30px 10px;
     display:flex;
     flex-direction: column;
-    height:600px;
-    width: 400px;
+    min-height:600px;
+    width: 500px;
     border-style: solid;
+    border-radius: 2%;
+    border-color: rgba(0, 0, 0, 0.527);
+    align-items: center;
+    justify-content: space-between;
+}
+
+.projectTop {
+    display:flex;
+    flex-direction: column;
+    height:auto;
+    width: 425px;
 }
 
 .projectTitle {
-    margin: 8px;
+    align-self: center;
     height:auto;
     width:auto;
     font-size: 18px;
 }
 
 .taskList {
-    margin: 8px 24px;
+    margin:20px 0px;
     display:flex;
     flex-direction:column;
     height:auto;
@@ -48,9 +93,12 @@ main {
 }
 
 .task {
+    margin: 6px 0px;
     font-size: 24px;
     color: rgb(202, 74, 0);
     transition: scale 0.2s;
+    overflow-wrap: break-word;
+    background-color:  rgba(255, 255, 255, 0.07);
 }
 
 .task:hover {
@@ -60,4 +108,71 @@ main {
 .completed {
     color:green;
     text-decoration: line-through;
+}
+
+.periodicityOnce {
+    text-decoration: underline;
+}
+
+.periodicityOnce.completed {
+    text-decoration: underline line-through;
+}
+
+.quickAddBox {
+    width: 320px;
+    margin-bottom: 20px;
+    display:flex;
+    justify-content: center;
+}
+
+.completionBox {
+    background-color: rgb(71, 128, 71);
+    height:auto;
+    width: 200px;
+    padding: 8px;
+    border-radius: 3%;
+}
+
+.completionMessage {
+    font-size: 20px;
+    text-align: center;
+    overflow-wrap:break-word;
+    height:auto;
+    width: auto;
+}
+
+.formBox {
+    display:flex;
+    flex-direction: column;
+    align-items: baseline;
+    gap: 3px;
+    position: absolute;
+    padding: 12px;
+    height:auto;
+    width: 300px;
+    left: 0; 
+    right: 0;
+    bottom: 100px;
+    margin-left: auto; 
+    margin-right: auto; 
+    background-color: wheat;
+    border-radius: 3%;
+}
+
+.checkLabelPair {
+    margin-left: 72px;
+    gap: 6px;
+}
+
+.submitButton {
+    align-self: center;
+}
+
+.checkbox {
+    scale:1.5;
+    margin-right: 3px;
+}
+
+.label {
+    font-size: 25px;
 }
