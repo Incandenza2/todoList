@@ -1,4 +1,4 @@
-import {format, isToday, isSameDay, isBefore, addDays, parseJSON, getDay} from "date-fns";
+import {format, isToday, isSameDay, isBefore, addDays, parseJSON, getDay, toDate, parseISO, formatISO} from "date-fns";
 
 
 
@@ -35,6 +35,7 @@ var currentDay;
 
 
 const drawProjects = function() {
+    let busy = 0; // this is for the button checks later on, to make sure you can't click them while the weekday menu is up.
     tasksModule.checkCompletion();
     console.log(projectsModule.projectsArray)
     let projectsBox = document.querySelector(".projectsBox");
@@ -61,7 +62,7 @@ const drawProjects = function() {
                 console.log(element.id);
                 tasksModule.allTasks.find((thing)=> {return thing.id ===  element.id}).completionStatus = element.completionStatus;
                 tasksModule.todayTasks.find((thing)=> {return thing.id ===  element.id}).completionStatus = element.completionStatus;
-                storageManagement.saveEverything();
+                storageManagement.saveEverything(currentDay);
                 tasksModule.checkCompletion();
                 console.log(element.completionStatus + element.id);
             })
@@ -77,16 +78,17 @@ const drawProjects = function() {
         let AddToTomorrowButton = dom.addElement("button", `#${project.title.value}` + "QuickAddBox", "addButton");
         AddToTomorrowButton.textContent = "Tomorrow";
         AddToTodayButton.addEventListener("click", () => {
-            if (quickAddBoxInput.value.length > 0) {
+            if ((quickAddBoxInput.value.length > 0) && (busy === 0)) {
             let randomTaskId = generateRandomTaskId();
-            tasksModule.addTask(quickAddBoxInput.value, currentDay, "once", "normal", randomTaskId);
+            tasksModule.addTask(quickAddBoxInput.value, formatISO(currentDay), "once", "normal", randomTaskId);
             }
 
         })
         AddToTomorrowButton.addEventListener("click", () => {
-            if (quickAddBoxInput.value.length > 0) {
+            if ((quickAddBoxInput.value.length > 0) && (busy === 0)) {
             let randomTaskId = generateRandomTaskId();
-            let tomorrow = addDays(currentDay, 1);
+            let tomorrow = formatISO(addDays(currentDay, 1));
+            console.log(tomorrow);
             tasksModule.addTask(quickAddBoxInput.value, tomorrow, "once", "normal", randomTaskId); 
             }
 
@@ -96,9 +98,9 @@ const drawProjects = function() {
         let AddDailyButton = dom.addElement("button", `#${project.title.value}` + "QuickAddBox", "addButton");
         AddDailyButton.textContent = "New Daily";
         AddDailyButton.addEventListener("click", () => {
-            if (quickAddBoxInput.value.length > 0) {
+            if ((quickAddBoxInput.value.length > 0) && (busy === 0)) {
             let randomTaskId = generateRandomTaskId();
-            tasksModule.addTask(quickAddBoxInput.value, currentDay, "daily", "normal", randomTaskId); 
+            tasksModule.addTask(quickAddBoxInput.value, formatISO(currentDay), "daily", "normal", randomTaskId); 
             };
 
         }
@@ -109,7 +111,8 @@ const drawProjects = function() {
         let AddWeekdayButton = dom.addElement("button", `#${project.title.value}` + "QuickAddBox", "addButton");
         AddWeekdayButton.textContent = "Specify Weekday";
         AddWeekdayButton.addEventListener("click", () => {
-            if (quickAddBoxInput.value.length > 0) {
+            if ((quickAddBoxInput.value.length > 0) && (busy === 0)) {
+            busy = 1;
             let taskNameInput = quickAddBoxInput.value;
             let formBox = dom.addElement("form", "#content", "formBox");
             let weekdays = ["Sunday", "Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday"];
@@ -133,11 +136,12 @@ const drawProjects = function() {
                 formBox.remove();
                 let randomTaskId = generateRandomTaskId();
                 tasksModule.addTask(taskNameInput, chosenWeekdays, "weekday", "normal", randomTaskId);
+                drawProjects();
 
             })
             }
 
-        }, {once: true}
+        }
         )
     })
 }
@@ -183,8 +187,8 @@ const tasksModule = (function () {
             "id" : {value: `${id}`, enumerable: true}
         });
         tasksModule.allTasks.push(addedTask)
-        if (isSameDay(date, currentDay)) {tasksModule.todayTasks.push(addedTask)}
-        storageManagement.saveEverything();
+        if (isSameDay(parseISO(date), currentDay)) {tasksModule.todayTasks.push(addedTask)}
+        storageManagement.saveEverything(currentDay);
         drawProjects();
         
     }
@@ -254,8 +258,8 @@ const storageManagement = (function() {
     const initialize = function(currentDay) {
         if (!localStorage.getItem("currentDay")) {
             currentDay = new Date();
-            localStorage.setItem("currentDay", JSON.stringify(currentDay))
             projectsModule.initializeTodayProject();
+            saveEverything(currentDay);
         } else {
             currentDay = parseJSON(JSON.parse(localStorage.getItem("currentDay")))
             if (isToday(currentDay)) {
@@ -267,10 +271,10 @@ const storageManagement = (function() {
             //parse allTasks and todayTasks array and establish them in the page.
             } else if (!isToday(currentDay)) {
                 currentDay = new Date();
-                localStorage.setItem("currentDay", JSON.stringify(currentDay));
+                //localStorage.setItem("currentDay", JSON.stringify(currentDay));
                 tasksModule.allTasks = tasksModule.retrieveAllTasks();
                 tasksModule.allTasks.forEach((task, index) => {
-                    console.log(isBefore(task.date, currentDay));
+                    console.log(isBefore(parseISO(task.date), currentDay));
                     if (task.periodicity === "daily") {
                         task.completionStatus = "not completed"
                         tasksModule.todayTasks.push(task);
@@ -280,7 +284,12 @@ const storageManagement = (function() {
                             tasksModule.todayTasks.push(task);
                         }
                     } else if ((task.periodicity === "once") && (task.completionStatus === "not completed")) {
-                        if ((isBefore(task.date, currentDay)) || (isSameDay(task.date, currentDay))) {
+                        console.log("Logging the isBefore check")
+                        console.log((isBefore(parseISO(task.date), currentDay)));
+                        console.log("Logging the isSameDay check")
+                        console.log((isSameDay(parseISO(task.date), currentDay)));
+                        console.log("logging task.date" + parseISO(task.date) + "then logging currentDay" + currentDay)
+                        if ((isBefore(parseISO(task.date), currentDay)) || (isSameDay(parseISO(task.date), currentDay))) {
                         tasksModule.todayTasks.push(task);
                         }
                     } else if ((task.periodicity === "once") && (task.completionStatus === "completed")) {
@@ -289,7 +298,7 @@ const storageManagement = (function() {
                 })
                 projectsModule.projectsArray = projectsModule.retrieveProjectsArray().map((x) => x);
                 projectsModule.refreshTodayProject();
-                saveEverything();
+                saveEverything(currentDay);
             
 
             //we redefine currentDay AND we pull the tasks from allTasks, and generate a new todayTasks by 
@@ -299,7 +308,7 @@ const storageManagement = (function() {
          } return currentDay
     }
 
-    const saveEverything = function() {
+    const saveEverything = function(currentDay) {
         localStorage.setItem("currentDay", JSON.stringify(currentDay));
         localStorage.setItem("allTasks", JSON.stringify(tasksModule.allTasks));
         localStorage.setItem("todayTasks", JSON.stringify(tasksModule.todayTasks))
