@@ -30,12 +30,12 @@ function generateRandomTaskId() {
             }
     return randomTaskId;
 }
-
+var menuIsOpen = 0;
+var busy = 0; // this is for the button checks later on, to make sure you can't click them while the weekday menu is up.
 var currentDay;
 
 
 const drawProjects = function() {
-    let busy = 0; // this is for the button checks later on, to make sure you can't click them while the weekday menu is up.
     tasksModule.checkCompletion();
     console.log(projectsModule.projectsArray)
     let projectsBox = document.querySelector(".projectsBox");
@@ -89,7 +89,7 @@ const drawProjects = function() {
             let randomTaskId = generateRandomTaskId();
             let tomorrow = formatISO(addDays(currentDay, 1));
             console.log(tomorrow);
-            tasksModule.addTask(quickAddBoxInput.value, tomorrow, "once", "normal", randomTaskId); 
+            tasksModule.addTask(quickAddBoxInput.value, tomorrow, "once", "normal", randomTaskId);
             }
 
         }
@@ -100,7 +100,7 @@ const drawProjects = function() {
         AddDailyButton.addEventListener("click", () => {
             if ((quickAddBoxInput.value.length > 0) && (busy === 0)) {
             let randomTaskId = generateRandomTaskId();
-            tasksModule.addTask(quickAddBoxInput.value, formatISO(currentDay), "daily", "normal", randomTaskId); 
+            tasksModule.addTask(quickAddBoxInput.value, formatISO(currentDay), "daily", "normal", randomTaskId);
             };
 
         }
@@ -136,6 +136,7 @@ const drawProjects = function() {
                 formBox.remove();
                 let randomTaskId = generateRandomTaskId();
                 tasksModule.addTask(taskNameInput, chosenWeekdays, "weekday", "normal", randomTaskId);
+                busy = 0;
                 drawProjects();
 
             })
@@ -190,8 +191,90 @@ const tasksModule = (function () {
         if (isSameDay(parseISO(date), currentDay)) {tasksModule.todayTasks.push(addedTask)}
         storageManagement.saveEverything(currentDay);
         drawProjects();
+        if (menuIsOpen === 1) {tasksModule.drawTaskMenu("fast")};
         
     }
+
+    const drawTaskMenu = function (mode) {
+        let drawTasksSign = function (parent, side) {
+            let tasksSign = dom.addElement("button", `.${parent}`, `tasksSign${side}`)
+            tasksSign.textContent = "TASKS"
+        };
+        let leftMain = document.querySelector(".leftMain");
+        leftMain.replaceChildren("");
+        drawTasksSign("leftMain", "Left");
+        let tasksSign = document.querySelector(".tasksSignLeft");
+        let drawTaskDeletionMenu = function() {
+            menuIsOpen = 1;
+            leftMain.replaceChildren("");
+            document.querySelector(".rightMain").replaceChildren("");
+            drawTasksSign("rightMain", "Right");
+            let taskDeletionBox = dom.addElement("div", ".leftMain", "taskDeletionBox");
+            let taskDeletionList = dom.addElement("div", ".taskDeletionBox", "taskDeletionList");
+            tasksModule.allTasks.forEach((element, index) => {
+                let taskDeletionLine = dom.addElement("div",".taskDeletionList","taskDeletionLine");
+                taskDeletionLine.classList.add(`line${index}`)
+                let taskDeletionDescription = dom.addElement("p", `.line${index}`,"taskDeletionDescription");
+                taskDeletionDescription.textContent = element.description;
+                let taskDeletionMoveUp = dom.addElement ("button", `.line${index}`,"taskDeletionMoveUp");
+                taskDeletionMoveUp.textContent = "↑";
+                taskDeletionMoveUp.addEventListener("click", () => {
+                    if (index != 0) {
+                        let tempElement = tasksModule.allTasks[index];
+                        tasksModule.allTasks[index] = tasksModule.allTasks[index-1];
+                        tasksModule.allTasks[index-1] = tempElement;
+                        let todayElement = tasksModule.todayTasks.find((task) => {return task.id == element.id});
+                        let todayIndex = tasksModule.todayTasks.indexOf(todayElement);
+                        console.log(todayIndex);
+                        if (todayIndex != 0) {
+                            let tempTodayElement = tasksModule.todayTasks[todayIndex]
+                            tasksModule.todayTasks[todayIndex] = tasksModule.todayTasks[todayIndex-1];
+                            tasksModule.todayTasks[todayIndex-1] = tempTodayElement;
+                            projectsModule.refreshTodayProject();
+                        };
+                        storageManagement.saveEverything(currentDay);
+                        drawProjects();
+                        drawTaskDeletionMenu();
+                    }
+                })
+                let taskDeletionDelete = dom.addElement("button", `.line${index}`, "taskDeletionDelete");
+                taskDeletionDelete.textContent = "delete";
+                taskDeletionDelete.addEventListener("click", () => {
+                    let todayElement = tasksModule.todayTasks.find((task) => {return task.id == element.id});
+                    let todayIndex = tasksModule.todayTasks.indexOf(todayElement);
+                    if (todayIndex != -1) {
+                        tasksModule.todayTasks.splice(todayIndex,1);
+                    }
+                    tasksModule.allTasks.splice(index, 1);
+                    projectsModule.refreshTodayProject();
+                    storageManagement.saveEverything(currentDay);
+                    drawProjects();
+                    drawTaskDeletionMenu();
+                })
+            })
+            let closeButton = dom.addElement("button", ".taskDeletionBox", "closeButton");
+            closeButton.textContent = "Close"
+            closeButton.addEventListener("click", () => {
+                leftMain.replaceChildren("");
+                document.querySelector(".rightMain").replaceChildren("");
+                menuIsOpen = 0;
+                tasksModule.drawTaskMenu();
+                console.log(tasksModule.todayTasks);
+                drawProjects();
+
+            })
+        
+        }
+        //we use this mode to Open the menu without the click input, it's a quick and dirty way to make it so the user can add new tasks while this menu is open. slow for when startup calls this, fast for when a user adds a task.
+        if (mode == "fast") {drawTaskDeletionMenu(); console.log("Hello????")}
+        tasksSign.addEventListener("click", () => {
+            if (busy === 0) {
+            drawTaskDeletionMenu();
+            }
+        });
+        
+
+        }
 
     const checkCompletion = function() {
         let completionCount = 0;
@@ -208,7 +291,7 @@ const tasksModule = (function () {
             } else if ((completionRate > 40) && (completionRate <= 60)) {document.body.className = "five"
             } else if ((completionRate > 60) && (completionRate <= 80)) {document.body.className = "seven"
             } else if ((completionRate > 80) && (completionRate <= 100)) {document.body.className = "nine"}
-            if ((completionRate == 100) && (document.querySelector(".completionBox") == undefined))   {
+            if ((completionRate == 100) && (document.querySelector(".rightMain").childNodes.length < 2))   {
                 let completionBox = dom.addElement("div", ".rightMain", "completionBox");
                 let completionMessage = dom.addElement("p", ".completionBox", "completionMessage");
                 if (tasksModule.todayTasks.length == 1) {completionMessage.textContent = "Nice, you did a thing."
@@ -227,7 +310,7 @@ const tasksModule = (function () {
             }
         }
     }
-    return {taskFactory, allTasks, todayTasks, addTask, retrieveAllTasks, retrieveTodayTasks, checkCompletion};
+    return {taskFactory, allTasks, todayTasks, addTask, retrieveAllTasks, retrieveTodayTasks, checkCompletion, drawTaskMenu};
 })();
 
 const projectsModule = (function() {
@@ -244,7 +327,7 @@ const projectsModule = (function() {
         JSON.parse(localStorage.getItem("projectsArray")).forEach((project) => {
             projectsArray.push(project)
             console.log(projectsArray);
-        });
+        }); 
         return projectsArray
     }
 
@@ -349,6 +432,7 @@ const pageLoad = function () {
     // generate a new "todayTasks" with all the daily + otherwise date / weekday defined tasks in "allTasks". 
     // For example something like (tasks.forEach : if periodicity === daily, task.date = currenDay)
     let leftMain = dom.addElement("div","#content", "leftMain");
+    tasksModule.drawTaskMenu();
     let main = dom.addElement("main", "#content", "main");
     let rightMain = dom.addElement("div","#content","rightMain");
     let projectsBox = dom.addElement("div", ".main", "projectsBox")
